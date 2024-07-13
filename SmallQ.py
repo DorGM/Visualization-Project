@@ -205,7 +205,7 @@ def generate_normalized_stacked_bar_charts(data, category):
 st.set_page_config(layout="wide")
 
 # Load the background image
-bg_image_path = "C:/Users/dordo/OneDrive/Desktop/road2.jpg"
+bg_image_path = "road2.jpg"
 
 # Encode the image in base64
 with open(bg_image_path, "rb") as image_file:
