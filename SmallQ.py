@@ -20,9 +20,9 @@ df['Week'] = df['Date'].dt.isocalendar().week
 
 # Color mapping for "Day type"
 color_map = {
-    'Sunday/Thursday': 'lightblue',
-    'Monday/Tuesday/Wednesday': 'lightgreen',
-    'Weekend/Holiday': 'lightcoral'
+    'Sunday/Thursday': '#3182bd',
+    'Monday/Tuesday/Wednesday': '#fec44f',
+    'Weekend/Holiday': '#f03b20'
 }
 
 # Define the function to find valid combinations
@@ -118,6 +118,9 @@ def generate_normalized_stacked_bar_charts(data, category):
     # Convert 'Road width' to categorical with the specified order
     data['Road width'] = pd.Categorical(data['Road width'], categories=road_width_order, ordered=True)
 
+    severity_order = ["Fatal", "Severe", "Light"]
+    color_discrete_map = {'Fatal': '#f03b20', 'Severe': '#3182bd', 'Light': '#fec44f'}
+
     if category == "Accident severity":
         # Exclude unknown path types
         data_filtered = data[data['Path type'] != 'Unknown number of lanes']
@@ -127,6 +130,9 @@ def generate_normalized_stacked_bar_charts(data, category):
         # Group by 'Path type'
         grouped_data = data_filtered.groupby(['Road width', 'Path type', category]).size().reset_index(name='Accident Count')
         pivot_data = grouped_data.pivot(index=['Road width', 'Path type'], columns=category, values='Accident Count').fillna(0)
+
+        # Ensure the order of the severity levels
+        pivot_data = pivot_data[severity_order]
 
         # Normalize the data to get ratios
         pivot_data_normalized = pivot_data.div(pivot_data.sum(axis=1), axis=0)
@@ -138,9 +144,9 @@ def generate_normalized_stacked_bar_charts(data, category):
         fig = px.bar(pivot_data_normalized.reset_index(),
                      x='Road width', y=pivot_data_normalized.columns,
                      facet_col='Path type', facet_col_wrap=4,  # Adjusted to 4 for one line
-                     category_orders={'Path type': path_type_order, 'Road width': road_width_order},
+                     category_orders={'Path type': path_type_order, 'Road width': road_width_order, category: severity_order},
                      labels={'value': 'Normalized Accident Count'},
-                     color_discrete_map={'Fatal': '#0000ff', 'Severe': '#ffdb68'},
+                     color_discrete_map=color_discrete_map,
                      title=f"Ratio of Accidents by Road Width, Path Type, and {category.replace('_', ' ').title()}")
 
         # Ensure consistent font size across all x-axis labels
@@ -223,7 +229,7 @@ st.markdown(
         filter: brightness(0.7);
         padding: 20px;
         height: 100vh; /* Make the header take full viewport height */
-        text-align: center;
+        width: 100%; /* Ensure the header takes the full width */
         color: lightblue;
         font-family: 'Times New Roman', Times, serif;
         display: flex;
@@ -233,16 +239,20 @@ st.markdown(
     .header h1 {{
         font-size: 3em;
         color: black; /* Set title color to black */
+        margin-top: 0;
+        margin-bottom: 20px; /* Add some space below the title */
+        text-align: center; /* Center align the title */
     }}
     .header p {{
         font-size: 1.4em; /* Increase font size */
         font-weight: bold; /* Make the text bold */
-        max-width: 800px;
-        margin: 0 auto;
+        width: 100%; /* Make the paragraph take full width */
+        margin: 0; /* Remove margins */
         color: white; /* Set paragraph color to white */
         background-color: rgba(0, 0, 0, 0.5); /* Add black background with 50% opacity */
-        padding: 10px;
+        padding: 20px; /* Add padding for readability */
         border-radius: 10px;
+        text-align: left; /* Align text to the left */
     }}
     </style>
     """,
@@ -254,7 +264,7 @@ st.markdown(
     f"""
     <div class="header">
         <h1>How Road Accidents Are Affected By Environmental Characteristics</h1>
-        <p>Israel is a small country with a dense road system, encompassing around 20,000 kilometers of roads. The ratio of vehicles to people is approximately 450 per 1,000. On average, each vehicle travels about 16,000 kilometers annually, contributing to a combined total distance of 50-70 billion kilometers. Road congestion and accidents are significant issues worldwide, and they are especially noticeable in Israel due to its small area. In this project, we aim to analyze road accidents in Israel. We explore several key questions: What is the impact of environmental conditions on accident severity? Does the day of the week affect the number of accidents? Are there differences in the number and type of crashes on various roads (e.g., different widths, one-way vs. two-way)? Additionally, can we identify variations in accident rates across different areas based on the time of day? Our dashboard provides answers to all these questions, offering insights into the relationship between environmental characteristics and road accidents in Israel.</p>
+        <p>Israel, a small country with about 20,000 kilometers of roads, has a vehicle-to-people ratio of 450 per 1,000. Each vehicle averages 16,000 kilometers annually, totaling 50-70 billion kilometers. This density results in notable road congestion and accidents. This project analyzes road accidents in Israel, addressing key questions: How do environmental conditions affect accident severity? Does the day of the week influence accident numbers? Are crash rates different on various roads? Can we identify accident rate variations by time of day across areas? Our dashboard offers insights into these questions, revealing the relationship between environmental factors and road accidents in Israel.</p>
     </div>
     """,
     unsafe_allow_html=True
@@ -270,15 +280,15 @@ def create_graph_for_combination(data, combination):
     counts = temp_data['Accident severity'].value_counts(normalize=True)
     return counts
 
-
 # Setup Streamlit UI
-st.title("Accident severity analysis by different road conditions")
+st.title("Accident severity analysis under different environmental conditions (represented as combinations)")
 
 # Display a dropdown to select combinations
-selected_combinations = st.multiselect("Select road conditions to compare:", valid_combinations, default=[('Daylight', 'Dry', 'No defect', 'Clear')], format_func=lambda x: f"Light: {x[0]}, Surface: {x[1]}, Condition: {x[2]}, Weather: {x[3]}")
+selected_combinations = st.multiselect("The default combination is the ideal one. Select environmental conditions from the options to compare (you can choose as many combinations as you want):", valid_combinations, default=[('Daylight', 'Dry', 'No defect', 'Clear')], format_func=lambda x: f"Light: {x[0]}, Surface: {x[1]}, Condition: {x[2]}, Weather: {x[3]}")
 
 # Create the bar chart
 fig = make_subplots(specs=[[{"secondary_y": True}]])
+
 for idx, combo in enumerate(selected_combinations):
     severity_counts = create_graph_for_combination(df, combo)
     show_legend = True  # Show legend only for the first bar of each combination
@@ -293,9 +303,9 @@ for idx, combo in enumerate(selected_combinations):
         show_legend = False  # Subsequent bars won't show in the legend
 
 fig.update_layout(
-    title="Normalized Accident Severity for Selected Conditions",
+    title="Accident Severity for Selected Conditions",
     xaxis_title="Accident Severity",
-    yaxis_title="Normalized Count",
+    yaxis_title="Accident's ratio",
     barmode='group',
     legend_title='Light condition, Surface, Road condition, Weather'
 )
@@ -469,4 +479,3 @@ faceted_view = view_type == 'Faceted'
 
 fig = plot_accidents_by_time(df, faceted=faceted_view)
 st.plotly_chart(fig, use_container_width=True)
-
