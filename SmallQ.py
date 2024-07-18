@@ -145,7 +145,7 @@ def generate_normalized_stacked_bar_charts(data, category):
                      x='Road width', y=pivot_data_normalized.columns,
                      facet_col='Path type', facet_col_wrap=4,  # Adjusted to 4 for one line
                      category_orders={'Path type': path_type_order, 'Road width': road_width_order, category: severity_order},
-                     labels={'value': 'Normalized Accident Count'},
+                     labels={'value': 'Accidents Ratio'},
                      color_discrete_map=color_discrete_map,
                      title=f"Ratio of Accidents by Road Width, Path Type, and {category.replace('_', ' ').title()}")
 
@@ -281,10 +281,11 @@ def create_graph_for_combination(data, combination):
     return counts
 
 # Setup Streamlit UI
-st.title("Accident severity analysis under different environmental conditions (represented as combinations)")
+st.title("Accident Severity Analysis Under Different Environmental Conditions")
+st.subheader("Select combinations of environmental conditions to compare, only those yielding results are displayed. The default combination represents ideal conditions. You can choose as many combinations as you want.")
 
 # Display a dropdown to select combinations
-selected_combinations = st.multiselect("The default combination is the ideal one. Select environmental conditions from the options to compare (you can choose as many combinations as you want):", valid_combinations, default=[('Daylight', 'Dry', 'No defect', 'Clear')], format_func=lambda x: f"Light: {x[0]}, Surface: {x[1]}, Condition: {x[2]}, Weather: {x[3]}")
+selected_combinations = st.multiselect("Select Combination:", valid_combinations, default=[('Daylight', 'Dry', 'No defect', 'Clear')], format_func=lambda x: f"Light: {x[0]}, Surface: {x[1]}, Condition: {x[2]}, Weather: {x[3]}")
 
 # Create the bar chart
 fig = make_subplots(specs=[[{"secondary_y": True}]])
@@ -305,7 +306,7 @@ for idx, combo in enumerate(selected_combinations):
 fig.update_layout(
     title="Accident Severity for Selected Conditions",
     xaxis_title="Accident Severity",
-    yaxis_title="Accident's ratio",
+    yaxis_title="Accidents ratio",
     barmode='group',
     legend_title='Light condition, Surface, Road condition, Weather'
 )
@@ -313,13 +314,13 @@ fig.update_layout(
 st.plotly_chart(fig, use_container_width=True)
 
 # Year selection
-selected_year = st.selectbox("Select a year to filter the plot by:", sorted(df['Year'].unique()), index=0)
+selected_year = st.selectbox("Select A Year To Filter The Plot By:", sorted(df['Year'].unique()), index=0)
 
 # Filter data by the selected year
 year_data = df[df['Year'] == selected_year]
 
 # Bar chart for accident analysis
-st.subheader("Average accidents number per Day type")
+st.subheader("Average Accidents Number Per Day Type")
 
 # Calculate the number of days for each "Day type"
 day_type_days = year_data.groupby('Day type')['Date'].nunique().reset_index(name='Day Count')
@@ -411,10 +412,10 @@ for month in range(1, 13):
 st.markdown('</div>', unsafe_allow_html=True)
 
 # Accident Severity Faceting
-st.subheader("We want to see the effect of road width on accident severity or crash type:")
+st.subheader("We Want To See The Effect Of Road Width On Accident Severity Or Crash Type:")
 
 # Add a filter to select between "Accident severity" and "Crash type"
-category = st.selectbox("Select the feature you want to analyze:", ["Accident severity", "Crash type"])
+category = st.selectbox("Select The Feature You Want To Analyze:", ["Accident severity", "Crash type"])
 
 fig = generate_normalized_stacked_bar_charts(df, category)
 st.plotly_chart(fig)
@@ -471,7 +472,7 @@ def plot_accidents_by_time(df, faceted=False):
 
 
 # Usage in Streamlit
-st.subheader("Number of accidents in different areas in Israel by Hour")
+st.subheader("Number Of Accidents In Different Areas In Israel By Hour")
 
 # Toggle between faceted and combined views
 view_type = st.radio("Select View Type:", ('Combined', 'Faceted'))
